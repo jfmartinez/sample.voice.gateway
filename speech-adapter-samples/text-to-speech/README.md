@@ -7,55 +7,45 @@ This sample text to speech adapter uses the Watson SDK for Text To Speech found 
 By default IBM Voice Gateway uses the Watson Speech services for Text To Speech synthesis, the purpose of this project is to show how a developer can integrate a third party Text To Speech engine with IBM Voice Gateway. This project uses the Watson SDK for Text To Speech as the example for text synthesis.
 
 ## Requires
-- [NodeJS v6 and higher](https://nodejs.org/en/download/)
+- [NodeJS v20 and higher](https://nodejs.org/en/download/)
 - [IBM Voice Gateway](https://www.ibm.com/support/knowledgecenter/SS4U29/deploydocker.html) Setup
 
-## Setup with Watson Text To Speech
+
+## Setup
 1. Clone the Samples Repository
     ```
-    git clone https://github.com/WASdev/sample.voice.gateway.git
-    cd speech-adapter-samples/text-to-speech/
+    git clone https://github.com/jfmartinez/sample.voice.gateway.git -b elevenlabs-tts
+    cd sample.voice.gateway/speech-adapter-samples/text-to-speech/
     ```
 1. Install dependencies
     ```
     npm install
     ```
-1. Add in your credentials, under `config/default.json`:
-    ```json
-    {
-        "Server": {
-            "port": 8010
-        },
-        "WatsonTextToSpeech": {
-            "credentials": {
-                "username": "<username>",
-                "password": "<password>"
-            }
-        }
-    }
+
+1. (Optional) If working with a remote Voice Gateway you can use [ngrok](https://ngrok.com/) to expose your service:
+    ```
+    ngrok http 8010
     ```
 
-    You can also set environment variables, WATSON_TTS_USERNAME and WATSON_TTS_PASSWORD like so:
-    ```bash
-    WATSON_TTS_USERNAME=<username> WATSON_TTS_PASSWORD=<password> npm start
+1. Copy the `.env.sample` file to `.env`.
+    ```
+    cp .env.sample .env
     ```
 
-1. Run the test cases to validate it's working:
+1. Set `ELEVENLABS_API_KEY` in your `.env` file.
 
-    ```bash
-    npm test
-    ```
+1. Run the server with `npm start`
 
-1. Connect the Voice Gateway to this proxy, set the `WATSON_TTS_URL` under the media.relay to point to this sample proxy
+1. Configure the Voice Gateway to connect to the adapter, by setting the `WATSON_TTS_URL` under the media.relay to point to this sample proxy
     ```
-    - WATSON_TTS_URL=http://{hostname}:8010
+    - WATSON_TTS_URL=https://fcea70235af5.ngrok-free.app
     ```
 
 1. Make a call
 
 ### Implement your own Text To Speech Engine
 
-  Currently, this sample only demonstrates how to use Watson Text To Speech as the Text To Speech engine for the Voice Gateway. You can use the `lib/WatsonTextToSpeechEngine.js` as a guideline on how to implement your own Text To Speech Engine. Essentially, you'll be implementing a [Readable NodeJS Stream](http://nodejs.org/api/stream.html#stream_class_stream_readable). Once you implement your own class, you can modify the `lib/TextToSpeechAdapter.js` to `require` it.
+  Currently, this sample only demonstrates how to use Watson Text To Speech as the Text To Speech engine for the Voice Gateway. You can use the `lib/services/WatsonTextToSpeechEngine.js` as a guideline on how to implement your own Text To Speech Engine. Essentially, you'll be implementing a [Readable NodeJS Stream](http://nodejs.org/api/stream.html#stream_class_stream_readable). Once you implement your own class, you can modify the `lib/TextToSpeechAdapter.js` to `require` it.
 
   For example,
 
@@ -142,6 +132,31 @@ By default IBM Voice Gateway uses the Watson Speech services for Text To Speech 
   ```
   npm test
   ```
+
+## IBM Cloud Code Engine Deployment
+
+**TBD (Work iN Progress) **
+See [Deploying your app from local source code with the CLI](https://cloud.ibm.com/docs/codeengine?topic=codeengine-app-local-source-code)
+
+Before you begin
+
+1. Set up your [Code Engine CLI](https://cloud.ibm.com/docs/codeengine?topic=codeengine-install-cli) environment.
+2. [Create and work with a project.](https://cloud.ibm.com/docs/codeengine?topic=codeengine-manage-project)
+
+Create and work with a project.
+
+The server comes with the Dockerfile for Code Engine deployment. To deploy the server to Code Engine, please follow the steps below:
+
+**Note:** The steps guide how to push with a `.env` file, but
+1. Build the docker image
+  1. Copy the `.env-sample` file to `.env` and fill in the required information
+  2. Build the image with docker build -t <image-name> . The image name should follow the format of <registry>/<namespace>/<image-name>:<tag>. For example, us.icr.io/testitall_ns/testitall_server:latest.
+2. Push the image to the container registry with:
+```
+ docker push <image-name>
+ ```
+3. Create a Code Engine project and deploy the image
+
 ## License
 
 Licensed under [Apache 2.0 License](https://github.com/WASdev/sample.voice.gateway/blob/master/LICENSE)

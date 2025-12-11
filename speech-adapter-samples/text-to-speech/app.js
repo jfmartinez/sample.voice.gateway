@@ -1,5 +1,5 @@
-const Config = require('config');
+require('dotenv').config();
 
-const PORT = Config.get('Server.port');
+const PORT = process.env.PORT || 8010;
 
-require('./lib/TextToSpeechAdapter').start({ port: PORT });
+require('./lib/ConnectionHandler').start({ port: PORT });

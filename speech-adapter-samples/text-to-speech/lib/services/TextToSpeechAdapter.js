@@ -1,5 +1,5 @@
 /**
-* (C) Copyright IBM Corporation 2018.
+* (C) Copyright IBM Corporation 2025.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -13,18 +13,15 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-const { Readable } = require('stream');
+class TextToSpeechAdapter {
+  constructor(config) {
+    this.config = config;
+  }
 
-class TextToSpeechEngine extends Readable {
-  /* eslint-disable class-methods-use-this */
-  _read() {}
-
-  /**
-   * Destroys the Text To Speech Engine if a close from the other side occurs
-   */
   // eslint-disable-next-line class-methods-use-this
-  destroy() {
-    throw new Error('not implemented');
+  async synthesize() {
+    throw new Error('Not implemented');
   }
 }
-module.exports = TextToSpeechEngine;
+
+module.exports = TextToSpeechAdapter;

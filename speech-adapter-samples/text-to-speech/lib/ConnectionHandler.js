@@ -17,14 +17,17 @@ const WebSocketServer = require('ws').Server;
 
 // Change to your own Text to Speech Engine implementation, you can use
 // the WatsonTextToSpeechEngine.js for guidance
-const TextToSpeechEngine = require('./WatsonTextToSpeechEngine');
+const TextToSpeechEngine = require('./services/ElevenLabs');
+
+// Uncomment to enable Watson Text-To-Speech
+// const TextToSpeechEngine = require('./services/WatsonTextToSpeechEngine');
+
 
 const url = require('url');
-const Config = require('config');
 
 const DEFAULT_PORT = 8010;
-const LOG_LEVEL = Config.get('LogLevel');
-const logger = require('pino')({ level: LOG_LEVEL, name: 'TextToSpeechAdapter' });
+// const LOG_LEVEL = Config.get('LogLevel');
+const logger = require('pino')({ level: 'debug', name: 'TextToSpeechAdapter' });
 
 function handleTextToSpeechConnection(webSocket, incomingMessage) {
   logger.debug('connection received');
@@ -35,16 +38,18 @@ function handleTextToSpeechConnection(webSocket, incomingMessage) {
 
   // Get headers
   const { headers } = incomingMessage;
-  logger.trace(headers, 'headers on websocket connection:');
+  logger.debug(headers, 'headers on websocket connection:');
 
   const sessionID = headers['vgw-session-id'];
 
   logger.debug(`connection with session-id: ${sessionID}`);
   let textToSpeechEngine;
-  webSocket.on('message', (data) => {
+  let audioStream;
+  webSocket.on('message', async (data) => {
     if (typeof data === 'string') {
       try {
         const message = JSON.parse(data);
+        logger.info('message starting');
         // Message contains, text and accept
         // Combine the start message with query parameters to generate a config
         const config = Object.assign(queryParams, message);
@@ -54,12 +59,14 @@ function handleTextToSpeechConnection(webSocket, incomingMessage) {
         // NodeJS Stream API
         textToSpeechEngine = new TextToSpeechEngine(config);
 
-        textToSpeechEngine.on('data', (ttsData) => {
+        audioStream = await textToSpeechEngine.synthesize();
+
+        audioStream.on('data', (ttsData) => {
           logger.trace(`data from engine ${ttsData.length}`);
           webSocket.send(ttsData);
         });
 
-        textToSpeechEngine.on('error', (error) => {
+        audioStream.on('error', (error) => {
           logger.error(error, 'TextToSpeechEngine encountered an error: ');
           const errorMessage = {
             error: error.message,
@@ -67,11 +74,12 @@ function handleTextToSpeechConnection(webSocket, incomingMessage) {
           webSocket.send(JSON.stringify(errorMessage));
         });
 
-        textToSpeechEngine.on('end', (reason = 'No close reason defined') => {
+        audioStream.on('end', (reason = 'No close reason defined') => {
           logger.debug('TextToSpeechEngine closed');
           webSocket.close(1000, reason);
         });
       } catch (e) {
+        // TODO send Error back
         logger.error(e);
         webSocket.close(1000, 'Invalid start message');
       }
@@ -83,9 +91,6 @@ function handleTextToSpeechConnection(webSocket, incomingMessage) {
   // Close event
   webSocket.on('close', (code, reason) => {
     logger.debug(`onClose, code = ${code}, reason = ${reason}`);
-    if (textToSpeechEngine) {
-      textToSpeechEngine.destroy();
-    }
   });
 }
 let wsServer = null;
@@ -95,6 +100,7 @@ function startServer(options = { port: DEFAULT_PORT }) {
     try {
       wsServer = new WebSocketServer({ port: options.port });
     } catch (e) {
+      // eslint-disable-next-line no-promise-executor-return
       return reject(e);
     }
 
@@ -108,7 +114,6 @@ function startServer(options = { port: DEFAULT_PORT }) {
     });
 
     wsServer.on('connection', handleTextToSpeechConnection);
-    return wsServer;
   });
 }
 module.exports.start = startServer;
@@ -128,4 +133,3 @@ function stopServer() {
   });
 }
 module.exports.stop = stopServer;
-

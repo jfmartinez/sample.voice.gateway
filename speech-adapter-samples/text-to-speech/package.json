@@ -12,7 +12,9 @@
   "author": "",
   "license": "SEE LICENSE IN LICENSE",
   "dependencies": {
-    "config": "^1.29.2",
+    "config": "3.3.12",
+    "dotenv": "16.5.0",
+    "elevenlabs": "1.57.0",
     "ibm-watson": "^8.0.0",
     "pino": "^4.10.2",
     "ws": "^3.3.3"
